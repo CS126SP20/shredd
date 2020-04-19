@@ -5,6 +5,12 @@
 
 namespace mylibrary {
 
+class Blocks {
+  Blocks();
+
+  //
+};
+
 }  // namespace mylibrary
 
 
