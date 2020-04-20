@@ -3,10 +3,11 @@
 #ifndef FINALPROJECT_APPS_MYAPP_H_
 #define FINALPROJECT_APPS_MYAPP_H_
 
-#include <cinder/app/App.h>
 #include <Box2D/Box2D.h>
+#include <cinder/app/App.h>
 #include <mylibrary/blocks.h>
 
+#include <set>
 
 namespace myapp {
 
@@ -17,6 +18,7 @@ class MyApp : public cinder::app::App {
   void update() override;
   void draw() override;
   void keyDown(cinder::app::KeyEvent) override;
+  void keyUp(cinder::app::KeyEvent) override;
 
  private:
   /**
@@ -46,6 +48,7 @@ class MyApp : public cinder::app::App {
   // TODO: make a game engine
   b2World* world;
   mylibrary::Blocks blocks_;
+  std::set<int> held_keys_;
 };
 
 }  // namespace myapp
