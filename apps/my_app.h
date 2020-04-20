@@ -5,6 +5,7 @@
 
 #include <cinder/app/App.h>
 #include <Box2D/Box2D.h>
+#include <mylibrary/blocks.h>
 
 
 namespace myapp {
@@ -43,6 +44,8 @@ class MyApp : public cinder::app::App {
   bool paused_;
   const std::string player_name_;
   // TODO: make a game engine
+  b2World* world;
+  mylibrary::Blocks blocks_;
 };
 
 }  // namespace myapp
