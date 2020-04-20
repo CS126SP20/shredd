@@ -42,6 +42,18 @@ class MyApp : public cinder::app::App {
    */
   void ResetGame() const;
 
+  /**
+   * The following are the functions for applying forces on the blocks.
+   */
+  void OneLeft();
+  void OneRight();
+  void OneStill();
+  void TwoLeft();
+  void TwoRight();
+  void TwoStill();
+
+
+
  private:
   bool paused_;
   const std::string player_name_;

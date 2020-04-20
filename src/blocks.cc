@@ -25,7 +25,7 @@ void Blocks::init(b2World* world, int x_one, int y_one, int x_two, int y_two) {
   polygonShape.SetAsBox(50, 50);
   b2FixtureDef myFixtureDef;
   myFixtureDef.shape = &polygonShape;
-  myFixtureDef.density = 1;
+  myFixtureDef.density = 0.01f;
 
   block_one_->CreateFixture(&myFixtureDef);
   block_two_->CreateFixture(&myFixtureDef);
@@ -36,11 +36,13 @@ b2Vec2 Blocks::GetBlockOnePos() const { return block_one_->GetPosition(); }
 b2Vec2 Blocks::GetBlockTwoPos() const { return block_two_->GetPosition(); }
 
 void Blocks::ApplyForceToTwo(const b2Vec2& force) {
-  block_two_->ApplyLinearImpulse(force, block_two_->GetWorldCenter());
+  //block_two_->ApplyLinearImpulse(force, block_two_->GetWorldCenter());
+  block_two_->ApplyForceToCenter(force);
 }
 
 void Blocks::ApplyForceToOne(const b2Vec2& force) {
-  block_one_->ApplyLinearImpulse(force, block_one_->GetWorldCenter());
+  //block_one_->ApplyLinearImpulse(force, block_one_->GetWorldCenter());
+  block_one_->ApplyForceToCenter(force);
 }
 
 
