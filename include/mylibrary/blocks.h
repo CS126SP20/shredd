@@ -48,6 +48,9 @@ class Blocks {
    */
   void ApplyForceToTwo(const b2Vec2& force);
 
+  b2Body* GetBlockOne() const { return block_one_; }
+  b2Body* GetBlockTwo() const { return block_two_; }
+
  private:
   // Variables that represent the two blocks
   b2Body* block_one_;

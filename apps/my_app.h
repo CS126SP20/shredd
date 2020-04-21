@@ -27,6 +27,13 @@ class MyApp : public cinder::app::App {
   void DrawBlocks() const;
 
   /**
+   *
+   */
+  void DrawWalls() const;
+
+  void CreateWalls();
+
+  /**
    * This will draw the spikes at the correct locations
    */
   void DrawSpikes() const;
@@ -41,6 +48,8 @@ class MyApp : public cinder::app::App {
    * another game.
    */
   void ResetGame() const;
+
+  void HandleKeyPressed();
 
   /**
    * The following are the functions for applying forces on the blocks.
@@ -61,6 +70,8 @@ class MyApp : public cinder::app::App {
   b2World* world;
   mylibrary::Blocks blocks_;
   std::set<int> held_keys_;
+  b2Body* wall_one_;
+  b2Body* wall_two_;
 };
 
 }  // namespace myapp
