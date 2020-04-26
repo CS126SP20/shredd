@@ -5,6 +5,7 @@
 
 #include <Box2D/Box2D.h>
 #include <cinder/app/App.h>
+#include <cinder/params/Params.h>
 #include <mylibrary/blocks.h>
 
 #include <set>
@@ -63,6 +64,7 @@ class MyApp : public cinder::app::App {
 
 
 
+
  private:
   bool paused_;
   const std::string player_name_;
@@ -72,6 +74,7 @@ class MyApp : public cinder::app::App {
   std::set<int> held_keys_;
   b2Body* wall_one_;
   b2Body* wall_two_;
+  cinder::params::InterfaceGlRef mParams;
 };
 
 }  // namespace myapp

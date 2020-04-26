@@ -4,6 +4,7 @@
 #include "Box2D/Box2D.h"
 
 namespace mylibrary {
+const float kPPM = 50.0f;
 
 class Blocks {
  public:
@@ -18,7 +19,7 @@ class Blocks {
    * @param x_two the x position of the second block
    * @param y_two the y position of the second block
    */
-  void init(b2World* world, int x_one, int y_one, int x_two, int y_two);
+  void init(b2World* world, float x_one, float y_one, float x_two, float y_two);
 
   /**
    * Return block_one_'s current position.
