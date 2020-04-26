@@ -2,7 +2,7 @@
 
 #include <mylibrary/blocks.h>
 
-const int kBlockSize = 50;
+const float kBlockSize = 50.0f;
 
 namespace mylibrary {
 
@@ -29,12 +29,14 @@ void Blocks::init(b2World* world, float x_one, float y_one, float x_two, float y
   polygonShape.SetAsBox(kBlockSize / kPPM, kBlockSize / kPPM);
   b2FixtureDef myFixtureDef;
   myFixtureDef.shape = &polygonShape;
+  myFixtureDef.friction = 0.3f;
   myFixtureDef.density = 1.0f;
 
   b2PolygonShape polygonShape2;
   polygonShape2.SetAsBox(kBlockSize / kPPM, kBlockSize / kPPM);
   b2FixtureDef myFixtureDef2;
   myFixtureDef2.shape = &polygonShape;
+  myFixtureDef2.friction = 0.3f;
   myFixtureDef2.density = 1.0f;
 
   block_one_->CreateFixture(&myFixtureDef);
@@ -46,13 +48,13 @@ b2Vec2 Blocks::GetBlockOnePos() const { return block_one_->GetPosition(); }
 b2Vec2 Blocks::GetBlockTwoPos() const { return block_two_->GetPosition(); }
 
 void Blocks::ApplyForceToTwo(const b2Vec2& force) {
-  //block_two_->ApplyLinearImpulse(force, block_two_->GetWorldCenter());
-  block_two_->ApplyForceToCenter(force);
+  block_two_->ApplyLinearImpulse(force, block_two_->GetWorldCenter());
+  //block_two_->ApplyForceToCenter(force);
 }
 
 void Blocks::ApplyForceToOne(const b2Vec2& force) {
-  //block_one_->ApplyLinearImpulse(force, block_one_->GetWorldCenter());
-  block_one_->ApplyForceToCenter(force);
+  block_one_->ApplyLinearImpulse(force, block_one_->GetWorldCenter());
+  //block_one_->ApplyForceToCenter(force);
 }
 
 

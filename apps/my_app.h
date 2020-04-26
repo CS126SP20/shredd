@@ -5,6 +5,7 @@
 
 #include <Box2D/Box2D.h>
 #include <cinder/app/App.h>
+#include <cinder/gl/Texture.h>
 #include <cinder/params/Params.h>
 #include <mylibrary/blocks.h>
 
@@ -34,6 +35,7 @@ class MyApp : public cinder::app::App {
 
   void CreateWalls();
 
+
   /**
    * This will draw the spikes at the correct locations
    */
@@ -44,11 +46,9 @@ class MyApp : public cinder::app::App {
    */
   void DrawGameOver() const;
 
-  /**
-   * This function resets the game state so that the user can safely play
-   * another game.
-   */
-  void ResetGame() const;
+  void DrawBackground();
+
+  void DrawHomeScreen();
 
   void HandleKeyPressed();
 
@@ -57,16 +57,16 @@ class MyApp : public cinder::app::App {
    */
   void OneLeft();
   void OneRight();
-  void OneStill();
+
   void TwoLeft();
   void TwoRight();
-  void TwoStill();
+
 
 
 
 
  private:
-  bool paused_;
+  bool is_home_screen;
   const std::string player_name_;
   // TODO: make a game engine
   b2World* world;
@@ -75,6 +75,7 @@ class MyApp : public cinder::app::App {
   b2Body* wall_one_;
   b2Body* wall_two_;
   cinder::params::InterfaceGlRef mParams;
+  ci::gl::TextureRef image;
 };
 
 }  // namespace myapp

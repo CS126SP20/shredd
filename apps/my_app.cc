@@ -1,28 +1,29 @@
-// Copyright (c) 2020 [Your Name]. All rights reserved.
+// Copyright (c) 2020 [Alice Huang]. All rights reserved.
 
 #include "my_app.h"
+#include "cinder/ImageIo.h"
 #include <cinder/gl/draw.h>
 #include <cinder/gl/gl.h>
 #include <iostream>
 #include "cinder/params/Params.h"
 #include <cinder/app/App.h>
-#include "cinder/app/App.h"
+#include "cinder/gl/Texture.h"
 
 using cinder::Rectf;
 using namespace ci::app;
 using namespace ci;
 
-const double kForce = 10;
-const float kBlockSize = 50;
+const double kForce = 5;
+const float kBlockSize = 50.0f;
 const float kTimeStep = 1.0f / 60.0f;
-const size_t kWallWidth = 20;
+const float kWallWidth = 20.0f;
 const float kPPM = 50.0f; // Convert from pixels to meters
 
 namespace myapp {
 
 using cinder::app::KeyEvent;
 
-MyApp::MyApp() {}
+MyApp::MyApp(): is_home_screen{true} {}
 
 void MyApp::setup() {
   // Initialize world, blocks, and walls
@@ -31,35 +32,65 @@ void MyApp::setup() {
   blocks_.init(world, getWindowCenter().x - kBlockSize,
       getWindowCenter().y, getWindowCenter().x, getWindowCenter().y);
   CreateWalls();
-
+  image = ci::gl::Texture::create(loadImage(loadAsset("background_shredd.jpg")));
 }
 
 void MyApp::update() {
   // In order to actually move the objects
-  world->Step(kTimeStep, 0, 0);
-  // Keys
+  world->Step(kTimeStep, 5, 2);
+  world->ClearForces();
+  // Take care of key movements
   HandleKeyPressed();
 }
 
 void MyApp::draw() {
-  DrawBlocks();
-  DrawWalls();
+  cinder::gl::enableAlphaBlending();
+
+  gl::clear();
+  if (is_home_screen) {
+    //DrawHomeScreen();
+    DrawBackground();
+    DrawBlocks();
+    DrawWalls();
+  } else {
+    DrawBackground();
+    DrawBlocks();
+    DrawWalls();
+  }
+}
+
+void MyApp::DrawBackground() {
+  gl::clear(Color(.5, 1, 1));
+}
+
+void MyApp::DrawHomeScreen() {
+  gl::draw(image, getWindowBounds());
+  auto box = TextBox()
+      .alignment(TextBox::CENTER)
+      .font(cinder::Font("Impact", 80))
+      .size({600, 100})
+      .color(Color(0, .5, .5))
+      .backgroundColor(ColorA(0, 0, 0, 0))
+      .text("SHREDD");
+
+  const auto box_size = box.getSize();
+  const cinder::vec2 locp = {0, 0};
+  const auto surface = box.render();
+  const auto texture = cinder::gl::Texture::create(surface);
+  cinder::gl::draw(texture, locp);
 }
 
 
 void MyApp::DrawBlocks() const {
   // Get the current positioning
-  cinder::gl::clear();
-  cinder::gl::enableAlphaBlending();
-
   b2Vec2 block_one_pos = blocks_.GetBlockOnePos();
   b2Vec2 block_two_pos = blocks_.GetBlockTwoPos();
-  cinder::gl::color(.5, 0, .5);
+  cinder::gl::color(.5, 1, .5);
   cinder::gl::drawSolidRect(Rectf(block_one_pos.x * kPPM,
                                   block_one_pos.y * kPPM,
                                   block_one_pos.x * kPPM + kBlockSize,
                                   block_one_pos.y * kPPM + kBlockSize));
-  cinder::gl::color(0, .5, .5);
+  cinder::gl::color(1, .5, .5);
 
   cinder::gl::drawSolidRect(Rectf(block_two_pos.x * kPPM,
                                   block_two_pos.y * kPPM,
@@ -68,13 +99,13 @@ void MyApp::DrawBlocks() const {
 }
 
 void MyApp::DrawWalls() const {
-    cinder::gl::color(0, .5, 0);
+    cinder::gl::color(1, 1, 1);
     cinder::gl::drawSolidRect(Rectf(wall_one_->GetPosition().x * kPPM,
                                     0,
-                                    kWallWidth,
+                                    10,
                                     getWindowHeight()));
     cinder::gl::drawSolidRect(Rectf(wall_two_->GetPosition().x * kPPM,0,
-                                       getWindowWidth() - kWallWidth,
+                                       getWindowWidth() - 10,
                                        getWindowHeight()));
 }
 
@@ -83,7 +114,7 @@ void MyApp::CreateWalls() {
   wall_body_def_one.type = b2_staticBody;
   wall_body_def_one.position.Set(0.0f, double(getWindowHeight()) / (kPPM));
   b2PolygonShape wall_box;
-  wall_box.SetAsBox(0, 800 / (2*kPPM));
+  wall_box.SetAsBox(20, 800 / (2*kPPM));
   wall_one_ = world->CreateBody(&wall_body_def_one);
   wall_one_->CreateFixture(&wall_box, 0.0f);
 
@@ -105,7 +136,6 @@ void MyApp::keyUp(KeyEvent event) {
 }
 
 void MyApp::DrawSpikes() const {}
-void MyApp::ResetGame() const {}
 void MyApp::DrawGameOver() const {}
 
 
@@ -115,39 +145,30 @@ void MyApp::OneLeft() {
 void MyApp::OneRight() {
   blocks_.ApplyForceToOne(b2Vec2(kForce, 0));
 }
-void MyApp::OneStill() {
-  blocks_.ApplyForceToOne(b2Vec2(0, 0));
-}
+
 void MyApp::TwoLeft() {
   blocks_.ApplyForceToTwo(b2Vec2(-kForce, 0));
 }
 void MyApp::TwoRight() {
   blocks_.ApplyForceToTwo(b2Vec2(kForce, 0));
 }
-void MyApp::TwoStill() {
-  blocks_.ApplyForceToTwo(b2Vec2(0, 0));
-}
+
 void MyApp::HandleKeyPressed() {
-  if (held_keys_.find(KeyEvent::KEY_LEFT) != held_keys_.end() &&
-      held_keys_.find(KeyEvent::KEY_RIGHT) != held_keys_.end()) {
-    OneLeft();
-    TwoRight();
-  }
   float block_one_x = blocks_.GetBlockOnePos().x * kPPM;
   float block_two_x = blocks_.GetBlockTwoPos().x * kPPM;
-  /*if (held_keys_.find(KeyEvent::KEY_LEFT) != held_keys_.end() &&
+  if (held_keys_.find(KeyEvent::KEY_LEFT) != held_keys_.end() &&
       held_keys_.find(KeyEvent::KEY_RIGHT) != held_keys_.end()) {
     if (block_one_x <= kWallWidth &&
     block_two_x >= getWindowWidth() - kWallWidth - kBlockSize) {
-      OneRight();
-      TwoLeft();
+      blocks_.GetBlockOne()->SetLinearVelocity(b2Vec2(0, 0));
+      blocks_.GetBlockTwo()->SetLinearVelocity(b2Vec2(0, 0));
     } else if (block_one_x <= kWallWidth) {
-      OneRight();
+      blocks_.GetBlockOne()->SetLinearVelocity(b2Vec2(0, 0));
       TwoRight();
     } else if (block_two_x >= getWindowWidth()
                - kWallWidth - kBlockSize) {
       OneLeft();
-      TwoRight();
+      blocks_.GetBlockTwo()->SetLinearVelocity(b2Vec2(0, 0));
     } else {
       OneLeft();
       TwoRight();
@@ -155,10 +176,10 @@ void MyApp::HandleKeyPressed() {
   } else if (held_keys_.find(KeyEvent::KEY_LEFT) != held_keys_.end()) {
     if (block_two_x <= (kWallWidth + kBlockSize) &&
         block_one_x <= kWallWidth) {
-      OneRight();
-      TwoRight();
+      blocks_.GetBlockOne()->SetLinearVelocity(b2Vec2(0, 0));
+      blocks_.GetBlockTwo()->SetLinearVelocity(b2Vec2(0, 0));
     } else if (block_one_x <= kWallWidth) {
-      OneRight();
+      blocks_.GetBlockOne()->SetLinearVelocity(b2Vec2(0, 0));
       TwoLeft();
     } else {
       OneLeft();
@@ -168,34 +189,52 @@ void MyApp::HandleKeyPressed() {
     if (block_one_x >= (getWindowWidth() - 2*kBlockSize
         - kWallWidth) && block_two_x >= (getWindowWidth()
         - kBlockSize - kWallWidth)) {
-      OneLeft();
-      TwoLeft();
+      blocks_.GetBlockOne()->SetLinearVelocity(b2Vec2(0, 0));
+      blocks_.GetBlockTwo()->SetLinearVelocity(b2Vec2(0, 0));
     } else if (block_two_x >= (getWindowWidth() - kBlockSize - kWallWidth)) {
       OneRight();
-      TwoLeft();
+      blocks_.GetBlockTwo()->SetLinearVelocity(b2Vec2(0, 0));
     } else {
       OneRight();
       TwoRight();
     }
   } else if (held_keys_.find(KeyEvent::KEY_LEFT) == held_keys_.end() &&
              held_keys_.find(KeyEvent::KEY_RIGHT) == held_keys_.end()) {
-    // Move first block to center
-    if (block_one_x < getWindowCenter().x - kBlockSize) {
-      OneRight();
-    } else if (block_one_x > getWindowCenter().x - kBlockSize) {
-      OneLeft();
-    } else if (block_one_x == getWindowCenter().x - kBlockSize) {
-      OneStill();
+    // TODO: why are the two blocks overlapping???????
+    if (block_one_x + kBlockSize == block_two_x) { // Case where blocks are together
+      if (block_two_x == getWindowCenter().x) {
+        blocks_.GetBlockOne()->SetLinearVelocity(b2Vec2(0, 0));
+        blocks_.GetBlockTwo()->SetLinearVelocity(b2Vec2(0, 0));
+      }
+      if (block_two_x > getWindowCenter().x) {
+        // CASE 2: Both are to the right of middle
+        OneLeft();
+        TwoLeft();
+      }
+      if (block_two_x < getWindowCenter().x) {
+        // CASE 3: Both are to the left of middle
+        OneRight();
+        TwoRight();
+      }
+    } else if (block_one_x + kBlockSize != block_two_x) { // Case where blocks are separated
+      if (block_one_x + kBlockSize < getWindowCenter().x) {
+        OneRight();
+      } else if (block_one_x + kBlockSize > getWindowCenter().x) {
+        OneLeft();
+      } else if (block_one_x + kBlockSize == getWindowCenter().x) {
+        blocks_.GetBlockOne()->SetLinearVelocity(b2Vec2(0, 0));
+      }
+      if (block_two_x < getWindowCenter().x) {
+        TwoRight();
+      } else if (block_two_x > getWindowCenter().x) {
+        TwoLeft();
+      } else if (block_two_x == getWindowCenter().x) {
+        blocks_.GetBlockTwo()->SetLinearVelocity(b2Vec2(0, 0));
+      }
     }
-    // Move second block to center
-    if (block_two_x >= getWindowCenter().x) {
-      TwoLeft();
-    } else if (block_two_x <= getWindowCenter().x) {
-      TwoRight();
-    } else if (block_two_x == getWindowCenter().x) {
-      TwoStill();
-    }
-  } */
+
+
+  }
 }
 
 }  // namespace myapp

@@ -17,3 +17,7 @@
 - **4/21/20** Create/draw walls on boundary of screen
    - Still need to find out how to draw Box2D objects more effectively
    - Should find a way to detect the collisions instead of using magic numbers
+- **4/26/20** Fix units to allow blocks to move faster
+   - Still need to figure out spikes
+   - Tried changing the colors/background to make more visually pleasing
+   - Not sure what to do about the gap between the two blocks
