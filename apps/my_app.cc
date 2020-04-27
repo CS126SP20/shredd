@@ -23,7 +23,7 @@ namespace myapp {
 
 using cinder::app::KeyEvent;
 
-MyApp::MyApp(): is_home_screen{true} {}
+MyApp::MyApp(): is_home_screen{true}, should_flicker_{false} {}
 
 void MyApp::setup() {
   // Initialize world, blocks, and walls
@@ -32,7 +32,10 @@ void MyApp::setup() {
   blocks_.init(world, getWindowCenter().x - kBlockSize,
       getWindowCenter().y, getWindowCenter().x, getWindowCenter().y);
   CreateWalls();
-  image = ci::gl::Texture::create(loadImage(loadAsset("background_shredd.jpg")));
+  image = ci::gl::Texture::create(loadImage
+      (loadAsset("background_shredd.jpg")));
+  list_section_ = { 0, 0, 0 };
+  section_width_ = (float)getWindowHeight() / (float)(list_section_.size() - 1);
 }
 
 void MyApp::update() {
@@ -45,26 +48,20 @@ void MyApp::update() {
 
 void MyApp::draw() {
   cinder::gl::enableAlphaBlending();
-
   gl::clear();
+  gl::draw(image, getWindowBounds());
   if (is_home_screen) {
-    //DrawHomeScreen();
-    DrawBackground();
+    DrawHomeScreen();
     DrawBlocks();
-    DrawWalls();
   } else {
-    DrawBackground();
     DrawBlocks();
-    DrawWalls();
+    //DrawWalls();
+    DrawSpikes(); // TODO: figure out why the spikes are changing background
   }
 }
 
-void MyApp::DrawBackground() {
-  gl::clear(Color(.5, 1, 1));
-}
-
 void MyApp::DrawHomeScreen() {
-  gl::draw(image, getWindowBounds());
+  // Text box for title
   auto box = TextBox()
       .alignment(TextBox::CENTER)
       .font(cinder::Font("Impact", 80))
@@ -72,12 +69,28 @@ void MyApp::DrawHomeScreen() {
       .color(Color(0, .5, .5))
       .backgroundColor(ColorA(0, 0, 0, 0))
       .text("SHREDD");
-
   const auto box_size = box.getSize();
   const cinder::vec2 locp = {0, 0};
   const auto surface = box.render();
   const auto texture = cinder::gl::Texture::create(surface);
   cinder::gl::draw(texture, locp);
+
+  // Flickering effect for starting instructions
+  if (int(getElapsedSeconds() * 3) % 2 == 0) {
+    auto instructions = TextBox()
+        .alignment(TextBox::CENTER)
+        .font(cinder::Font("Impact", 30))
+        .size({600, 100})
+        .color(Color(0, .5, .5))
+        .backgroundColor(ColorA(0, 0, 0, 0))
+        .text("press SPACE to begin");
+    const auto instructions_size = instructions.getSize();
+    const cinder::vec2 loc_instructions = {0, 450};
+    const auto instructions_surface = instructions.render();
+    const auto instructions_texture =
+        cinder::gl::Texture::create(instructions_surface);
+    cinder::gl::draw(instructions_texture, loc_instructions);
+  }
 }
 
 
@@ -104,7 +117,8 @@ void MyApp::DrawWalls() const {
                                     0,
                                     10,
                                     getWindowHeight()));
-    cinder::gl::drawSolidRect(Rectf(wall_two_->GetPosition().x * kPPM,0,
+    cinder::gl::drawSolidRect(Rectf(wall_two_->GetPosition().x * kPPM,
+                                       0,
                                        getWindowWidth() - 10,
                                        getWindowHeight()));
 }
@@ -112,7 +126,8 @@ void MyApp::DrawWalls() const {
 void MyApp::CreateWalls() {
   b2BodyDef wall_body_def_one;
   wall_body_def_one.type = b2_staticBody;
-  wall_body_def_one.position.Set(0.0f, double(getWindowHeight()) / (kPPM));
+  wall_body_def_one.position.Set(0.0f,
+                                 double(getWindowHeight()) / (kPPM));
   b2PolygonShape wall_box;
   wall_box.SetAsBox(20, 800 / (2*kPPM));
   wall_one_ = world->CreateBody(&wall_body_def_one);
@@ -122,7 +137,8 @@ void MyApp::CreateWalls() {
   wall_box2.SetAsBox(20 / (2*kPPM), 800 / (2*kPPM));
   b2BodyDef wall_body_def_two;
   wall_body_def_two.type = b2_staticBody;
-  wall_body_def_two.position.Set(getWindowWidth() / kPPM, double(getWindowHeight())/ (kPPM));
+  wall_body_def_two.position.Set(getWindowWidth() / kPPM,
+                                 double(getWindowHeight())/ (kPPM));
   wall_two_ = world->CreateBody(&wall_body_def_two);
   wall_two_->CreateFixture(&wall_box2, 0.0f);
 }
@@ -135,7 +151,77 @@ void MyApp::keyUp(KeyEvent event) {
   held_keys_.erase(event.getCode());
 }
 
-void MyApp::DrawSpikes() const {}
+void MyApp::DrawSpikes() {
+  // Make it seem like it's moving...
+  spike_position_ += 0.1 * getElapsedSeconds();
+  if (spike_position_ > section_width_) {
+    spike_position_ -= section_width_;
+    list_section_.pop_front(); // Spike has moved off screen, so remove
+    int i = (rand() % 4); // choose number 0, 1, 2, or 3
+    list_section_.push_back(i);
+  }
+  int current_section = 0;
+  for (auto s: list_section_) {
+    if (s != 0) {
+      // Will randomly draw spikes
+      if (s % 4 == 0) {
+        DrawLeftSpike(current_section, 300);
+      } else if (s % 4 == 1) {
+        DrawRightSpike(current_section, 300);
+      } else if (s % 4 == 2) {
+        DrawLeftSpike(current_section, 150);
+        DrawRightSpike(current_section, 150);
+      } else if (s % 4 == 3) {
+        DrawCenterSpike(current_section);
+      }
+    }
+    current_section++;
+  }
+
+}
+
+void MyApp::DrawLeftSpike(int current_section, int size) {
+  float y_position_var =
+      getWindowHeight() - current_section * section_width_ + spike_position_;
+  cinder::gl::color(0, .5, .5);
+  gl::drawSolidTriangle(vec2(size,y_position_var - 50),
+                        vec2(0, y_position_var - 50),
+                        vec2(0, y_position_var));
+}
+
+void MyApp::DrawRightSpike(int current_section, int size) {
+  float y_position_var =
+      getWindowHeight() - current_section * section_width_ + spike_position_;
+  cinder::gl::color(0, .5, .5);
+  gl::drawSolidTriangle(vec2(getWindowWidth() - size,
+                         y_position_var - 50),
+                        vec2(getWindowWidth(),
+                            y_position_var - 50),
+                        vec2(getWindowWidth(), y_position_var));
+}
+
+void MyApp::DrawCenterSpike(int current_section) {
+  float y_position_var =
+      getWindowHeight() - current_section * section_width_ + spike_position_;
+  // Combine two triangles to make a diamond
+  cinder::gl::color(0, .5, .5);
+  gl::drawSolidTriangle(vec2(getWindowWidth() / 2,
+                                  y_position_var - 50),
+                        vec2(getWindowWidth() / 2 + 100,
+                                  y_position_var - 25),
+                        vec2(getWindowWidth() / 2,
+                                      y_position_var));
+
+  gl::drawSolidTriangle(vec2(getWindowWidth() / 2,
+                                  y_position_var - 50),
+                        vec2(getWindowWidth() / 2 - 100,
+                                  y_position_var - 25),
+                        vec2(getWindowWidth() / 2,
+                                      y_position_var));
+}
+
+
+
 void MyApp::DrawGameOver() const {}
 
 
@@ -156,6 +242,14 @@ void MyApp::TwoRight() {
 void MyApp::HandleKeyPressed() {
   float block_one_x = blocks_.GetBlockOnePos().x * kPPM;
   float block_two_x = blocks_.GetBlockTwoPos().x * kPPM;
+  // If the game is on home screen and user starts game...
+  if (held_keys_.find(KeyEvent::KEY_SPACE) != held_keys_.end()
+      && is_home_screen) {
+    is_home_screen = false;
+  } else if (is_home_screen) {
+    return; // Ensure blocks won't move if user hits arrows on home screen
+  }
+  // Handle game movements
   if (held_keys_.find(KeyEvent::KEY_LEFT) != held_keys_.end() &&
       held_keys_.find(KeyEvent::KEY_RIGHT) != held_keys_.end()) {
     if (block_one_x <= kWallWidth &&
@@ -200,8 +294,8 @@ void MyApp::HandleKeyPressed() {
     }
   } else if (held_keys_.find(KeyEvent::KEY_LEFT) == held_keys_.end() &&
              held_keys_.find(KeyEvent::KEY_RIGHT) == held_keys_.end()) {
-    // TODO: why are the two blocks overlapping???????
-    if (block_one_x + kBlockSize == block_two_x) { // Case where blocks are together
+    // TODO: why is there a gap between the two blocks?
+    if (block_one_x + kBlockSize == block_two_x) { // Blocks are together
       if (block_two_x == getWindowCenter().x) {
         blocks_.GetBlockOne()->SetLinearVelocity(b2Vec2(0, 0));
         blocks_.GetBlockTwo()->SetLinearVelocity(b2Vec2(0, 0));
@@ -216,7 +310,7 @@ void MyApp::HandleKeyPressed() {
         OneRight();
         TwoRight();
       }
-    } else if (block_one_x + kBlockSize != block_two_x) { // Case where blocks are separated
+    } else if (block_one_x + kBlockSize != block_two_x) { // Blocks separated
       if (block_one_x + kBlockSize < getWindowCenter().x) {
         OneRight();
       } else if (block_one_x + kBlockSize > getWindowCenter().x) {

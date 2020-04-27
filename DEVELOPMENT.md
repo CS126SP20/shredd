@@ -13,11 +13,19 @@
      - Figured out how to draw using Cinder functions, but want to see if there is a equivalent function for Box2D
    - Get objects to move, but want to have blocks interact
      - Make it so pushing one block will push the other one if they are in contact
-   - Need to figure out how to put walls on either side of the window
+   - ~~Need to figure out how to put walls on either side of the window~~
 - **4/21/20** Create/draw walls on boundary of screen
    - Still need to find out how to draw Box2D objects more effectively
    - Should find a way to detect the collisions instead of using magic numbers
 - **4/26/20** Fix units to allow blocks to move faster
-   - Still need to figure out spikes
+   - ~~Still need to figure out spikes~~
    - Tried changing the colors/background to make more visually pleasing
    - Not sure what to do about the gap between the two blocks
+- **4/27/20** Add spike graphics but need to fix details
+   - Add spike graphics in my_app.cc
+   - To do:
+     - [ ] Figure out why blocks have gap
+     - [ ] Make block movements less sensitive
+     - [ ] Figure out why DrawSpikes() changes the color of the background
+     - [ ] Detect collisions still
+     - [ ] Add score/leaderboard
