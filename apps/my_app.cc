@@ -8,6 +8,8 @@
 #include "cinder/params/Params.h"
 #include <cinder/app/App.h>
 #include "cinder/gl/Texture.h"
+#include <string>
+#include <chrono>
 
 using cinder::Rectf;
 using namespace ci::app;
@@ -21,15 +23,23 @@ const float kPPM = 50.0f; // Convert from pixels to meters
 
 namespace myapp {
 
+using std::chrono::duration_cast;
+using std::chrono::seconds;
+using std::chrono::milliseconds;
+using std::chrono::system_clock;
+
 using cinder::app::KeyEvent;
 
-MyApp::MyApp(): is_home_screen{true}, should_flicker_{false} {}
+MyApp::MyApp(): is_home_screen_{true},
+                should_flicker_{false},
+                score_{0},
+                is_start_{true} {}
 
 void MyApp::setup() {
   // Initialize world, blocks, and walls
-  world = new b2World(b2Vec2(0, 0));
-  world->SetAllowSleeping(false);
-  blocks_.init(world, getWindowCenter().x - kBlockSize,
+  world_ = new b2World(b2Vec2(0, 0));
+  world_->SetAllowSleeping(false);
+  blocks_.init(world_, getWindowCenter().x - kBlockSize,
       getWindowCenter().y, getWindowCenter().x, getWindowCenter().y);
   CreateWalls();
   image = ci::gl::Texture::create(loadImage
@@ -40,23 +50,36 @@ void MyApp::setup() {
 
 void MyApp::update() {
   // In order to actually move the objects
-  world->Step(kTimeStep, 5, 2);
-  world->ClearForces();
+  world_->Step(kTimeStep, 5, 2);
+  world_->ClearForces();
+
   // Take care of key movements
   HandleKeyPressed();
+
+  // Handle scoring
+  if (!is_home_screen_) {
+    if (is_start_) {
+      time_game_start_ = getElapsedSeconds();
+    }
+    is_start_ = false;
+    score_ = (int)(getElapsedSeconds() - time_game_start_);
+  }
+
 }
 
 void MyApp::draw() {
   cinder::gl::enableAlphaBlending();
   gl::clear();
   gl::draw(image, getWindowBounds());
-  if (is_home_screen) {
+  if (is_home_screen_) {
     DrawHomeScreen();
     DrawBlocks();
   } else {
-    DrawBlocks();
     //DrawWalls();
-    DrawSpikes(); // TODO: figure out why the spikes are changing background
+    gl::draw(image, getWindowBounds());
+    DrawSpikes();
+    DrawBlocks();
+    DrawGameScreen();
   }
 }
 
@@ -93,6 +116,22 @@ void MyApp::DrawHomeScreen() {
   }
 }
 
+void MyApp::DrawGameScreen() {
+  // Text box for title
+  auto box = TextBox()
+      .alignment(TextBox::CENTER)
+      .font(cinder::Font("Impact", 30))
+      .size({600, 100})
+      .color(Color(0, .5, .5))
+      .backgroundColor(ColorA(0, 0, 0, 0))
+      .text(std::to_string(score_));
+  const auto box_size = box.getSize();
+  const cinder::vec2 locp = {0, 0};
+  const auto surface = box.render();
+  const auto texture = cinder::gl::Texture::create(surface);
+  cinder::gl::draw(texture, locp);
+}
+
 
 void MyApp::DrawBlocks() const {
   // Get the current positioning
@@ -124,34 +163,43 @@ void MyApp::DrawWalls() const {
 }
 
 void MyApp::CreateWalls() {
+  // Wall one
   b2BodyDef wall_body_def_one;
   wall_body_def_one.type = b2_staticBody;
   wall_body_def_one.position.Set(0.0f,
                                  double(getWindowHeight()) / (kPPM));
   b2PolygonShape wall_box;
-  wall_box.SetAsBox(20, 800 / (2*kPPM));
-  wall_one_ = world->CreateBody(&wall_body_def_one);
+  wall_box.SetAsBox(kWallWidth / (2*kPPM),
+      getWindowHeight() / (2*kPPM));
+  wall_one_ = world_->CreateBody(&wall_body_def_one);
   wall_one_->CreateFixture(&wall_box, 0.0f);
 
+  // Wall two
   b2PolygonShape wall_box2;
-  wall_box2.SetAsBox(20 / (2*kPPM), 800 / (2*kPPM));
+  wall_box2.SetAsBox(kWallWidth / (2*kPPM),
+      getWindowHeight() / (2*kPPM));
   b2BodyDef wall_body_def_two;
   wall_body_def_two.type = b2_staticBody;
   wall_body_def_two.position.Set(getWindowWidth() / kPPM,
                                  double(getWindowHeight())/ (kPPM));
-  wall_two_ = world->CreateBody(&wall_body_def_two);
+  wall_two_ = world_->CreateBody(&wall_body_def_two);
   wall_two_->CreateFixture(&wall_box2, 0.0f);
 }
 
 void MyApp::keyDown(KeyEvent event) {
+  // Add the key being held down to held_keys_
   held_keys_.insert(event.getCode());
 }
 
 void MyApp::keyUp(KeyEvent event) {
+  // Remove released key from held_keys_
   held_keys_.erase(event.getCode());
 }
 
+// Spike logic partially derived from:
+// https://github.com/OneLoneCoder/videos/blob/master/OneLoneCoder_FlappyBird.cpp
 void MyApp::DrawSpikes() {
+  // TODO: detect collisions
   // Make it seem like it's moving...
   spike_position_ += 0.1 * getElapsedSeconds();
   if (spike_position_ > section_width_) {
@@ -177,7 +225,6 @@ void MyApp::DrawSpikes() {
     }
     current_section++;
   }
-
 }
 
 void MyApp::DrawLeftSpike(int current_section, int size) {
@@ -221,10 +268,6 @@ void MyApp::DrawCenterSpike(int current_section) {
 }
 
 
-
-void MyApp::DrawGameOver() const {}
-
-
 void MyApp::OneLeft() {
   blocks_.ApplyForceToOne(b2Vec2(-kForce, 0));
 }
@@ -244,9 +287,9 @@ void MyApp::HandleKeyPressed() {
   float block_two_x = blocks_.GetBlockTwoPos().x * kPPM;
   // If the game is on home screen and user starts game...
   if (held_keys_.find(KeyEvent::KEY_SPACE) != held_keys_.end()
-      && is_home_screen) {
-    is_home_screen = false;
-  } else if (is_home_screen) {
+      && is_home_screen_) {
+    is_home_screen_ = false;
+  } else if (is_home_screen_) {
     return; // Ensure blocks won't move if user hits arrows on home screen
   }
   // Handle game movements
@@ -294,7 +337,7 @@ void MyApp::HandleKeyPressed() {
     }
   } else if (held_keys_.find(KeyEvent::KEY_LEFT) == held_keys_.end() &&
              held_keys_.find(KeyEvent::KEY_RIGHT) == held_keys_.end()) {
-    // TODO: why is there a gap between the two blocks?
+    // TODO: figure out gap between blocks
     if (block_one_x + kBlockSize == block_two_x) { // Blocks are together
       if (block_two_x == getWindowCenter().x) {
         blocks_.GetBlockOne()->SetLinearVelocity(b2Vec2(0, 0));
@@ -329,6 +372,14 @@ void MyApp::HandleKeyPressed() {
 
 
   }
+}
+
+void MyApp::ResetGame() {
+  score_ = 0;
+  is_home_screen_ = true;
+  time_game_start_ = 0;
+  list_section_.clear();
+  delete(world_);
 }
 
 }  // namespace myapp

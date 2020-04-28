@@ -13,6 +13,8 @@
 
 namespace myapp {
 
+using std::chrono::seconds;
+
 class MyApp : public cinder::app::App {
  public:
   MyApp();
@@ -34,6 +36,9 @@ class MyApp : public cinder::app::App {
    */
   void DrawWalls() const;
 
+  /**
+   * Create the wall objects.
+   */
   void CreateWalls();
 
 
@@ -65,10 +70,16 @@ class MyApp : public cinder::app::App {
    */
   void DrawCenterSpike(int current_section);
 
+
   /**
-   * This function will draw the leaderboard/other features once the game ends
+   * Draws the players score on the screen.
    */
-  void DrawGameOver() const;
+  void DrawGameScreen();
+
+  /**
+   * Reset game state.
+   */
+  void ResetGame();
 
   /**
    * Draws the home screen
@@ -93,12 +104,17 @@ class MyApp : public cinder::app::App {
  private:
 
   // Self-explanatory (b/c of naming) variables
-  bool is_home_screen;
+  bool is_home_screen_;
   bool should_flicker_;
+  bool is_start_;
+  double time_game_start_;
+
+  bool has_collided_;
   const std::string player_name_;
+  int score_;
 
   // World
-  b2World* world;
+  b2World* world_;
 
   // Blocks
   mylibrary::Blocks blocks_;

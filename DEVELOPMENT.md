@@ -26,6 +26,11 @@
    - To do:
      - [ ] Figure out why blocks have gap
      - [ ] Make block movements less sensitive
-     - [ ] Figure out why DrawSpikes() changes the color of the background
+     - [x] Figure out why DrawSpikes() changes the color of the background
      - [ ] Detect collisions still
-     - [ ] Add score/leaderboard
+     - [x] Add score
+- **4/28/20** Fix background and add score,
+   - Fixed situation where DrawSpikes() changed the color of background
+   - Add score on game screen (time elapsed since the game starts)
+   - Need to detect collisions to end the game
+   - Should make movements more precise
