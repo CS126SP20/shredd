@@ -30,14 +30,14 @@ void Blocks::init(b2World* world, float x_one, float y_one, float x_two, float y
   b2FixtureDef myFixtureDef;
   myFixtureDef.shape = &polygonShape;
   myFixtureDef.friction = 0.3f;
-  myFixtureDef.density = 1.0f;
+  myFixtureDef.density = .75f;
 
   b2PolygonShape polygonShape2;
   polygonShape2.SetAsBox(kBlockSize / kPPM, kBlockSize / kPPM);
   b2FixtureDef myFixtureDef2;
   myFixtureDef2.shape = &polygonShape;
   myFixtureDef2.friction = 0.3f;
-  myFixtureDef2.density = 1.0f;
+  myFixtureDef2.density = .75f;
 
   block_one_->CreateFixture(&myFixtureDef);
   block_two_->CreateFixture(&myFixtureDef2);
@@ -49,12 +49,10 @@ b2Vec2 Blocks::GetBlockTwoPos() const { return block_two_->GetPosition(); }
 
 void Blocks::ApplyForceToTwo(const b2Vec2& force) {
   block_two_->ApplyLinearImpulse(force, block_two_->GetWorldCenter());
-  //block_two_->ApplyForceToCenter(force);
 }
 
 void Blocks::ApplyForceToOne(const b2Vec2& force) {
   block_one_->ApplyLinearImpulse(force, block_one_->GetWorldCenter());
-  //block_one_->ApplyForceToCenter(force);
 }
 
 

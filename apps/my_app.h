@@ -103,12 +103,11 @@ class MyApp : public cinder::app::App {
  // Private variables
  private:
 
-  // Self-explanatory (b/c of naming) variables
+  // Simple variables
   bool is_home_screen_;
   bool should_flicker_;
   bool is_start_;
   double time_game_start_;
-
   bool has_collided_;
   const std::string player_name_;
   int score_;

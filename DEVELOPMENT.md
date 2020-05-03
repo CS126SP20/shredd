@@ -25,7 +25,7 @@
    - Add spike graphics in my_app.cc
    - To do:
      - [ ] Figure out why blocks have gap
-     - [ ] Make block movements less sensitive
+     - [x] Make block movements less sensitive
      - [x] Figure out why DrawSpikes() changes the color of the background
      - [ ] Detect collisions still
      - [x] Add score
@@ -34,3 +34,9 @@
    - Add score on game screen (time elapsed since the game starts)
    - Need to detect collisions to end the game
    - Should make movements more precise
+- **5/3/20** Add test for blocks and fix block movements to not sway in middle
+   - To do:
+     - [ ] Detect collisions
+     - [ ] Draw score after game ends
+     - [ ] Add audio
+     - [ ] Maybe add sparks graphic for when the user loses

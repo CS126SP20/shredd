@@ -9,7 +9,6 @@
 #include <cinder/app/App.h>
 #include "cinder/gl/Texture.h"
 #include <string>
-#include <chrono>
 
 using cinder::Rectf;
 using namespace ci::app;
@@ -18,7 +17,7 @@ using namespace ci;
 const double kForce = 5;
 const float kBlockSize = 50.0f;
 const float kTimeStep = 1.0f / 60.0f;
-const float kWallWidth = 20.0f;
+const float kWallWidth = 0.0f;
 const float kPPM = 50.0f; // Convert from pixels to meters
 
 namespace myapp {
@@ -50,7 +49,7 @@ void MyApp::setup() {
 
 void MyApp::update() {
   // In order to actually move the objects
-  world_->Step(kTimeStep, 5, 2);
+  world_->Step(kTimeStep, 8, 3);
   world_->ClearForces();
 
   // Take care of key movements
@@ -143,7 +142,6 @@ void MyApp::DrawBlocks() const {
                                   block_one_pos.x * kPPM + kBlockSize,
                                   block_one_pos.y * kPPM + kBlockSize));
   cinder::gl::color(1, .5, .5);
-
   cinder::gl::drawSolidRect(Rectf(block_two_pos.x * kPPM,
                                   block_two_pos.y * kPPM,
                                   block_two_pos.x * kPPM + kBlockSize,
@@ -166,8 +164,8 @@ void MyApp::CreateWalls() {
   // Wall one
   b2BodyDef wall_body_def_one;
   wall_body_def_one.type = b2_staticBody;
-  wall_body_def_one.position.Set(0.0f,
-                                 double(getWindowHeight()) / (kPPM));
+  wall_body_def_one.position.Set(-50.0f / (kPPM),
+                                 double(getWindowHeight()) / (2*kPPM));
   b2PolygonShape wall_box;
   wall_box.SetAsBox(kWallWidth / (2*kPPM),
       getWindowHeight() / (2*kPPM));
@@ -181,7 +179,7 @@ void MyApp::CreateWalls() {
   b2BodyDef wall_body_def_two;
   wall_body_def_two.type = b2_staticBody;
   wall_body_def_two.position.Set(getWindowWidth() / kPPM,
-                                 double(getWindowHeight())/ (kPPM));
+                                 double(getWindowHeight())/ (2*kPPM));
   wall_two_ = world_->CreateBody(&wall_body_def_two);
   wall_two_->CreateFixture(&wall_box2, 0.0f);
 }
@@ -201,7 +199,7 @@ void MyApp::keyUp(KeyEvent event) {
 void MyApp::DrawSpikes() {
   // TODO: detect collisions
   // Make it seem like it's moving...
-  spike_position_ += 0.1 * getElapsedSeconds();
+  spike_position_ += 0.2 * getElapsedSeconds();
   if (spike_position_ > section_width_) {
     spike_position_ -= section_width_;
     list_section_.pop_front(); // Spike has moved off screen, so remove
@@ -295,82 +293,31 @@ void MyApp::HandleKeyPressed() {
   // Handle game movements
   if (held_keys_.find(KeyEvent::KEY_LEFT) != held_keys_.end() &&
       held_keys_.find(KeyEvent::KEY_RIGHT) != held_keys_.end()) {
-    if (block_one_x <= kWallWidth &&
-    block_two_x >= getWindowWidth() - kWallWidth - kBlockSize) {
-      blocks_.GetBlockOne()->SetLinearVelocity(b2Vec2(0, 0));
-      blocks_.GetBlockTwo()->SetLinearVelocity(b2Vec2(0, 0));
-    } else if (block_one_x <= kWallWidth) {
-      blocks_.GetBlockOne()->SetLinearVelocity(b2Vec2(0, 0));
-      TwoRight();
-    } else if (block_two_x >= getWindowWidth()
-               - kWallWidth - kBlockSize) {
-      OneLeft();
-      blocks_.GetBlockTwo()->SetLinearVelocity(b2Vec2(0, 0));
-    } else {
-      OneLeft();
-      TwoRight();
-    }
+    OneLeft();
+    TwoRight();
   } else if (held_keys_.find(KeyEvent::KEY_LEFT) != held_keys_.end()) {
-    if (block_two_x <= (kWallWidth + kBlockSize) &&
-        block_one_x <= kWallWidth) {
-      blocks_.GetBlockOne()->SetLinearVelocity(b2Vec2(0, 0));
-      blocks_.GetBlockTwo()->SetLinearVelocity(b2Vec2(0, 0));
-    } else if (block_one_x <= kWallWidth) {
-      blocks_.GetBlockOne()->SetLinearVelocity(b2Vec2(0, 0));
-      TwoLeft();
-    } else {
-      OneLeft();
-      TwoLeft();
-    }
+    OneLeft();
+    TwoLeft();
   } else if (held_keys_.find(KeyEvent::KEY_RIGHT) != held_keys_.end()) {
-    if (block_one_x >= (getWindowWidth() - 2*kBlockSize
-        - kWallWidth) && block_two_x >= (getWindowWidth()
-        - kBlockSize - kWallWidth)) {
-      blocks_.GetBlockOne()->SetLinearVelocity(b2Vec2(0, 0));
-      blocks_.GetBlockTwo()->SetLinearVelocity(b2Vec2(0, 0));
-    } else if (block_two_x >= (getWindowWidth() - kBlockSize - kWallWidth)) {
-      OneRight();
-      blocks_.GetBlockTwo()->SetLinearVelocity(b2Vec2(0, 0));
-    } else {
-      OneRight();
-      TwoRight();
-    }
+    OneRight();
+    TwoRight();
   } else if (held_keys_.find(KeyEvent::KEY_LEFT) == held_keys_.end() &&
              held_keys_.find(KeyEvent::KEY_RIGHT) == held_keys_.end()) {
-    // TODO: figure out gap between blocks
-    if (block_one_x + kBlockSize == block_two_x) { // Blocks are together
-      if (block_two_x == getWindowCenter().x) {
-        blocks_.GetBlockOne()->SetLinearVelocity(b2Vec2(0, 0));
-        blocks_.GetBlockTwo()->SetLinearVelocity(b2Vec2(0, 0));
-      }
-      if (block_two_x > getWindowCenter().x) {
-        // CASE 2: Both are to the right of middle
-        OneLeft();
-        TwoLeft();
-      }
-      if (block_two_x < getWindowCenter().x) {
-        // CASE 3: Both are to the left of middle
-        OneRight();
-        TwoRight();
-      }
-    } else if (block_one_x + kBlockSize != block_two_x) { // Blocks separated
-      if (block_one_x + kBlockSize < getWindowCenter().x) {
-        OneRight();
-      } else if (block_one_x + kBlockSize > getWindowCenter().x) {
-        OneLeft();
-      } else if (block_one_x + kBlockSize == getWindowCenter().x) {
-        blocks_.GetBlockOne()->SetLinearVelocity(b2Vec2(0, 0));
-      }
-      if (block_two_x < getWindowCenter().x) {
-        TwoRight();
-      } else if (block_two_x > getWindowCenter().x) {
-        TwoLeft();
-      } else if (block_two_x == getWindowCenter().x) {
-        blocks_.GetBlockTwo()->SetLinearVelocity(b2Vec2(0, 0));
-      }
+    if (block_two_x <= 342 && block_two_x >= 318
+        && block_one_x <= 242 && block_one_x >= 218) {
+      blocks_.GetBlockOne()->SetLinearVelocity(b2Vec2(0, 0));
+      blocks_.GetBlockTwo()->SetLinearVelocity(b2Vec2(0, 0));
     }
-
-
+    if (block_one_x < 225) {
+      OneRight();
+    } else if (block_one_x > 225) {
+      OneLeft();
+    }
+    if (block_two_x < 325) {
+      TwoRight();
+    } else if (block_two_x > 325) {
+      TwoLeft();
+    }
   }
 }
 
