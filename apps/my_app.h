@@ -32,15 +32,9 @@ class MyApp : public cinder::app::App {
   void DrawBlocks() const;
 
   /**
-   * Draws the walls of the game
-   */
-  void DrawWalls() const;
-
-  /**
    * Create the wall objects.
    */
   void CreateWalls();
-
 
   /**
    * This will draw the spikes at the correct locations
@@ -69,7 +63,6 @@ class MyApp : public cinder::app::App {
    * @param current_section the section the spike should be in
    */
   void DrawCenterSpike(int current_section);
-
 
   /**
    * Draws the players score on the screen.
@@ -111,6 +104,7 @@ class MyApp : public cinder::app::App {
   bool has_collided_;
   const std::string player_name_;
   int score_;
+  int high_score_;
 
   // World
   b2World* world_;

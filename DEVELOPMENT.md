@@ -36,7 +36,7 @@
    - Should make movements more precise
 - **5/3/20** Add test for blocks and fix block movements to not sway in middle
    - To do:
-     - [ ] Detect collisions
-     - [ ] Draw score after game ends
-     - [ ] Add audio
+     - [x] Detect collisions
+     - [x] Draw score after game ends
+     - [x] Add audio
      - [ ] Maybe add sparks graphic for when the user loses
