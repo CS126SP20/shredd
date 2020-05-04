@@ -70,9 +70,35 @@ class MyApp : public cinder::app::App {
   void DrawGameScreen();
 
   /**
-   * Reset game state.
+   * Returns the area of a triangle given vertices.
+   * Code derived from: https://www.geeksforgeeks.org/check-whether-a-given-point-lies-inside-a-triangle-or-not/
+   *
+   * @param x1 the x-coordinate of first vertex
+   * @param y1 the y-coordinate of first vertex
+   * @param x2 the x-coordinate of second vertex
+   * @param y2 the y-coordinate of second vertex
+   * @param x3 the x-coordinate of third vertex
+   * @param y3 the y-coordinate of third vertex
+   * @return the area of the triangle formed.
    */
-  void ResetGame();
+  float Area(int x1, int y1, int x2, int y2, int x3, int y3);
+
+  /**
+   * Determine whether or not a given point lies within a triangle. This
+   * function and Area are used together to detect collisions in this game.
+   * Code derived from: https://www.geeksforgeeks.org/check-whether-a-given-point-lies-inside-a-triangle-or-not/
+   *
+   * @param x1 the x-coordinate of first vertex
+   * @param y1 the y-coordinate of first vertex
+   * @param x2 the x-coordinate of second vertex
+   * @param y2 the y-coordinate of second vertex
+   * @param x3 the x-coordinate of third vertex
+   * @param y3 the y-coordinate of third vertex
+   * @param x  the x-coordinate of the point we are examining
+   * @param y  the y-coordinate of the point we are examining
+   * @return true if the point (x,y) intersects the triangle, false otherwise
+   */
+  bool IsInside(int x1, int y1, int x2, int y2, int x3, int y3, int x, int y);
 
   /**
    * Draws the home screen
@@ -102,7 +128,6 @@ class MyApp : public cinder::app::App {
   bool is_start_;
   double time_game_start_;
   bool has_collided_;
-  const std::string player_name_;
   int score_;
   int high_score_;
 

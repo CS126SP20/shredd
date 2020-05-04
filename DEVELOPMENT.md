@@ -24,10 +24,10 @@
 - **4/27/20** Add spike graphics but need to fix details
    - Add spike graphics in my_app.cc
    - To do:
-     - [ ] Figure out why blocks have gap
+     - [x] Figure out why blocks have gap
      - [x] Make block movements less sensitive
      - [x] Figure out why DrawSpikes() changes the color of the background
-     - [ ] Detect collisions still
+     - [x] Detect collisions still
      - [x] Add score
 - **4/28/20** Fix background and add score,
    - Fixed situation where DrawSpikes() changed the color of background
@@ -40,3 +40,7 @@
      - [x] Draw score after game ends
      - [x] Add audio
      - [ ] Maybe add sparks graphic for when the user loses
+- **5/4/20** Handle displaying the high score and user score once game ends
+   - Made sure audio looped
+   - Changed code logic so user can play again - dont have to end program
+   - Still need to figure out README.md and PROPOSAL.md

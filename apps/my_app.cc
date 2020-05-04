@@ -15,8 +15,8 @@ using cinder::Rectf;
 using namespace ci::app;
 using namespace ci;
 
-// Global variable
-cinder::audio::VoiceRef background_music;
+// Global variable for audio purposes
+audio::VoiceRef background_music;
 
 const double kForce = 5;
 const float kBlockSize = 50.0f;
@@ -50,13 +50,18 @@ void MyApp::setup() {
       (loadAsset("background_shredd.jpg")));
   list_section_ = { 0, 0, 0 };
   section_width_ = (float)getWindowHeight() / (float)(list_section_.size() - 1);
-  cinder::audio::SourceFileRef sourceFile = cinder::audio::load
+  audio::SourceFileRef sourceFile = audio::load
       (cinder::app::loadAsset("my_app_audio.mp3"));
   background_music = cinder::audio::Voice::create(sourceFile);
   background_music->start();
 }
 
 void MyApp::update() {
+  // Loop music if it stopped...
+  if (!background_music->isPlaying()) {
+    background_music->start();
+  }
+
   // In order to actually move the objects
   world_->Step(kTimeStep, 8, 3);
   world_->ClearForces();
@@ -76,7 +81,7 @@ void MyApp::update() {
 }
 
 void MyApp::draw() {
-  cinder::gl::enableAlphaBlending();
+  gl::enableAlphaBlending();
   gl::clear();
   gl::draw(image, getWindowBounds());
   if (is_home_screen_) {
@@ -108,14 +113,14 @@ void MyApp::DrawHomeScreen() {
       .backgroundColor(ColorA(0, 0, 0, 0))
       .text("SHREDD");
   const auto box_size = box.getSize();
-  const cinder::vec2 locp = {0, 0};
+  const vec2 locp = {0, 0};
   const auto surface = box.render();
-  const auto texture = cinder::gl::Texture::create(surface);
-  cinder::gl::draw(texture, locp);
+  const auto texture = gl::Texture::create(surface);
+  gl::draw(texture, locp);
 
   // Flickering effect for starting instructions:
   // Can adjust numbers in this if statement to change rate of flickering
-  if (int(getElapsedSeconds() * 3) % 2 == 0 && !has_collided_) {
+  if (int(getElapsedSeconds() * 3) % 2 == 0) {
     auto instructions = TextBox()
         .alignment(TextBox::CENTER)
         .font(cinder::Font("Impact", 30))
@@ -124,15 +129,14 @@ void MyApp::DrawHomeScreen() {
         .backgroundColor(ColorA(0, 0, 0, 0))
         .text("press SPACE to begin");
     const auto instructions_size = instructions.getSize();
-    const cinder::vec2 loc_instructions = {0, 450};
+    const vec2 loc_instructions = {0, 450};
     const auto instructions_surface = instructions.render();
     const auto instructions_texture =
-        cinder::gl::Texture::create(instructions_surface);
-    cinder::gl::draw(instructions_texture, loc_instructions);
+        gl::Texture::create(instructions_surface);
+    gl::draw(instructions_texture, loc_instructions);
   }
 
   // Have to figure out elegant way to do this...
-  /*
   if (high_score_ != 0) {
     std::stringstream high_score_text;
     high_score_text << "Best: " << high_score_;
@@ -144,12 +148,12 @@ void MyApp::DrawHomeScreen() {
         .backgroundColor(ColorA(0, 0, 0, 0))
         .text(high_score_text.str());
     const auto scores_size = high_score.getSize();
-    const cinder::vec2 loc_scores = {0, 250};
+    const vec2 loc_scores = {0, 250};
     const auto scores_surface = high_score.render();
     const auto scores_texture =
-        cinder::gl::Texture::create(scores_surface);
-    cinder::gl::draw(scores_texture, loc_scores);
-  } */
+        gl::Texture::create(scores_surface);
+    gl::draw(scores_texture, loc_scores);
+  }
 
   // Draw scores
   if (has_collided_) {
@@ -163,12 +167,12 @@ void MyApp::DrawHomeScreen() {
         .backgroundColor(ColorA(0, 0, 0, 0))
         .text(score_text.str());
     const auto your_score_size = your_score.getSize();
-    const cinder::vec2 loc_your_score = {0, 325};
+    const vec2 loc_your_score = {0, 325};
     const auto your_scores_surface = your_score.render();
     const auto your_scores_texture =
-        cinder::gl::Texture::create(your_scores_surface);
+        gl::Texture::create(your_scores_surface);
 
-    cinder::gl::draw(your_scores_texture, loc_your_score);
+    gl::draw(your_scores_texture, loc_your_score);
   }
 }
 
@@ -182,10 +186,10 @@ void MyApp::DrawGameScreen() {
       .backgroundColor(ColorA(0, 0, 0, 0))
       .text(std::to_string(score_));
   const auto box_size = box.getSize();
-  const cinder::vec2 locp = {0, 0};
+  const vec2 locp = {0, 0};
   const auto surface = box.render();
-  const auto texture = cinder::gl::Texture::create(surface);
-  cinder::gl::draw(texture, locp);
+  const auto texture = gl::Texture::create(surface);
+  gl::draw(texture, locp);
 }
 
 
@@ -193,13 +197,13 @@ void MyApp::DrawBlocks() const {
   // Get the current positioning
   b2Vec2 block_one_pos = blocks_.GetBlockOnePos();
   b2Vec2 block_two_pos = blocks_.GetBlockTwoPos();
-  cinder::gl::color(.5, 1, .5);
-  cinder::gl::drawSolidRect(Rectf(block_one_pos.x * kPPM,
+  gl::color(.5, 1, .5);
+  gl::drawSolidRect(Rectf(block_one_pos.x * kPPM,
                                   block_one_pos.y * kPPM,
                                   block_one_pos.x * kPPM + kBlockSize,
                                   block_one_pos.y * kPPM + kBlockSize));
-  cinder::gl::color(1, .5, .5);
-  cinder::gl::drawSolidRect(Rectf(block_two_pos.x * kPPM,
+  gl::color(1, .5, .5);
+  gl::drawSolidRect(Rectf(block_two_pos.x * kPPM,
                                   block_two_pos.y * kPPM,
                                   block_two_pos.x * kPPM + kBlockSize,
                                   block_two_pos.y * kPPM + kBlockSize));
@@ -242,8 +246,10 @@ void MyApp::keyUp(KeyEvent event) {
 // Spike logic partially derived from:
 // https://github.com/OneLoneCoder/videos/blob/master/OneLoneCoder_FlappyBird.cpp
 void MyApp::DrawSpikes() {
-  // Make it seem like spikes are moving
-  spike_position_ += 0.2 * getElapsedSeconds(); // Increase # to make more fast
+  /* Note: use variable score_ since it is the time spent playing the game...
+   * It resets every time! */
+  spike_position_ += 0.2 * score_; // Increase decimal to make more fast
+
   if (spike_position_ > section_width_) {
     spike_position_ -= section_width_;
     list_section_.pop_front(); // Spike has moved off screen, so remove
@@ -269,30 +275,22 @@ void MyApp::DrawSpikes() {
   }
 }
 
-// Code derived from:
-// https://www.geeksforgeeks.org/check-whether-a-given-point-lies-inside-a-triangle-or-not/
-float area(int x1, int y1, int x2, int y2, int x3, int y3)
-{
+float MyApp::Area(int x1, int y1, int x2, int y2, int x3, int y3) {
   return abs((x1*(y2-y3) + x2*(y3-y1)+ x3*(y1-y2))/2.0);
 }
 
-// Code derived from:
-// https://www.geeksforgeeks.org/check-whether-a-given-point-lies-inside-a-triangle-or-not/
-/* A function to check whether point P(x, y) lies inside the triangle formed
-   by A(x1, y1), B(x2, y2) and C(x3, y3) */
-bool isInside(int x1, int y1, int x2, int y2, int x3, int y3, int x, int y)
-{
+bool MyApp::IsInside(int x1, int y1, int x2, int y2, int x3, int y3, int x, int y) {
   /* Calculate area of triangle ABC */
-  float A = area (x1, y1, x2, y2, x3, y3);
+  float A = Area (x1, y1, x2, y2, x3, y3);
 
   /* Calculate area of triangle PBC */
-  float A1 = area (x, y, x2, y2, x3, y3);
+  float A1 = Area (x, y, x2, y2, x3, y3);
 
   /* Calculate area of triangle PAC */
-  float A2 = area (x1, y1, x, y, x3, y3);
+  float A2 = Area (x1, y1, x, y, x3, y3);
 
   /* Calculate area of triangle PAB */
-  float A3 = area (x1, y1, x2, y2, x, y);
+  float A3 = Area (x1, y1, x2, y2, x, y);
 
   /* Check if sum of A1, A2 and A3 is same as A */
   return (A == A1 + A2 + A3);
@@ -310,8 +308,7 @@ void MyApp::DrawLeftSpike(int current_section, int size) {
   // y_position_var is bottom of spike
   float block_one_pos_x = blocks_.GetBlockOnePos().x * kPPM; // Store pos
   float block_one_pos_y = blocks_.GetBlockOnePos().y * kPPM;
-
-  if (isInside(0, y_position_var,
+  if (IsInside(0, y_position_var,
                0,y_position_var - 50,
                    size, y_position_var - 50,
                    block_one_pos_x, block_one_pos_y)) {
@@ -331,7 +328,7 @@ void MyApp::DrawRightSpike(int current_section, int size) {
   float block_two_pos_x = blocks_.GetBlockTwoPos().x * kPPM; // Store pos
   float block_two_pos_y = blocks_.GetBlockTwoPos().y * kPPM;
 
-  if (isInside(getWindowWidth() - size,y_position_var - 50,
+  if (IsInside(getWindowWidth() - size,y_position_var - 50,
                getWindowWidth(),y_position_var - 50,
                getWindowWidth(), y_position_var,
                block_two_pos_x + 50, block_two_pos_y)) {
@@ -361,39 +358,44 @@ void MyApp::DrawCenterSpike(int current_section) {
   float block_one_pos_y = blocks_.GetBlockOnePos().y * kPPM;
   float block_two_pos_x = blocks_.GetBlockTwoPos().x * kPPM; // Store pos
   float block_two_pos_y = blocks_.GetBlockTwoPos().y * kPPM;
+  float center = getWindowWidth() / 2;
+  float lower_point = y_position_var - 50;
 
-  bool second_half_two = isInside(getWindowWidth() / 2,y_position_var - 50,
-           getWindowWidth() / 2 + 100,y_position_var - 25,
-           getWindowWidth() / 2, y_position_var,
-           block_two_pos_x, block_two_pos_y)
-               || isInside(getWindowWidth() / 2,y_position_var - 50,
-                   getWindowWidth() / 2 + 100,y_position_var - 25,
-                   getWindowWidth() / 2, y_position_var,
+  bool second_half_two = IsInside(center, lower_point,
+                              center + 100,lower_point + 25,
+                                  center, lower_point + 50,
+                                  block_two_pos_x, block_two_pos_y)
+                       || IsInside(center, lower_point,
+                           center + 100,lower_point + 25,
+                           center, lower_point + 50,
                    block_two_pos_x, block_two_pos_y - 50);
-  bool second_half_one = isInside(getWindowWidth() / 2,y_position_var - 50,
-                                  getWindowWidth() / 2 + 100,y_position_var - 25,
-                                  getWindowWidth() / 2, y_position_var,
+  bool second_half_one = IsInside(center, lower_point,
+                                  center + 100,lower_point + 25,
+                                  center, lower_point + 50,
                                   block_one_pos_x, block_one_pos_y)
-                         || isInside(getWindowWidth() / 2,y_position_var - 50,
-                                     getWindowWidth() / 2 + 100,y_position_var - 25,
-                                     getWindowWidth() / 2, y_position_var,
+                       || IsInside(center, lower_point,
+                                     center + 100,lower_point + 25,
+                                     center, lower_point + 50,
                                      block_one_pos_x, block_one_pos_y - 50);
-  bool first_half_two = isInside(getWindowWidth() / 2,y_position_var - 50,
-                                 getWindowWidth() / 2 - 100,y_position_var - 25,
-                                  getWindowWidth() / 2, y_position_var,
+  bool first_half_two = IsInside(center, lower_point,
+                                 center - 100,lower_point + 25,
+                                 center, lower_point + 50,
                                   block_two_pos_x + 50, block_two_pos_y)
-                         || isInside(getWindowWidth() / 2,y_position_var - 50,
-                                     getWindowWidth() / 2 - 100,y_position_var - 25,
-                                     getWindowWidth() / 2, y_position_var,
-                                     block_two_pos_x + 50, block_two_pos_y - 50);
-  bool first_half_one = isInside(getWindowWidth() / 2,y_position_var - 50,
-                                getWindowWidth() / 2 - 100,y_position_var - 25,
-                                getWindowWidth() / 2, y_position_var,
+                       || IsInside(center, lower_point,
+                                     center - 100,lower_point + 25,
+                                     center, lower_point + 50,
+                                     block_two_pos_x + 50,
+                                     block_two_pos_y - 50);
+  bool first_half_one = IsInside(center, lower_point,
+                                 center - 100,lower_point + 25,
+                                 center, lower_point + 50,
                                 block_one_pos_x + 50, block_one_pos_y)
-                       || isInside(getWindowWidth() / 2,y_position_var - 50,
-                                   getWindowWidth() / 2 - 100,y_position_var - 25,
-                                   getWindowWidth() / 2, y_position_var,
-                                   block_one_pos_x + 50, block_one_pos_y - 50);
+                       || IsInside(center, lower_point,
+                                   center - 100,lower_point + 25,
+                                   center, lower_point + 50,
+                                   block_one_pos_x + 50,
+                                   block_one_pos_y - 50);
+  // Check intersection of either blocks with center spike
   if (first_half_one || first_half_two || second_half_one || second_half_two) {
     has_collided_ = true;
   }
@@ -420,8 +422,12 @@ void MyApp::HandleKeyPressed() {
   // If the game is on home screen and user starts game...
   if (held_keys_.find(KeyEvent::KEY_SPACE) != held_keys_.end()) {
     if (has_collided_) {
+      // Restart the game if user lost and presses space to play again
       has_collided_ = false;
       is_home_screen_ = false;
+      is_start_ = true;
+      list_section_.clear();
+      list_section_ = { 0, 0, 0 };
     }
     if (is_home_screen_) {
       is_home_screen_ = false;
@@ -456,14 +462,6 @@ void MyApp::HandleKeyPressed() {
       TwoLeft();
     }
   }
-}
-
-void MyApp::ResetGame() {
-  score_ = 0;
-  has_collided_ = false;
-  time_game_start_ = 0;
-  list_section_.clear();
-  list_section_ = { 0, 0, 0 };
 }
 
 }  // namespace myapp
