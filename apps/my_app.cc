@@ -12,18 +12,18 @@
 #include <cinder/audio/audio.h>
 
 using cinder::Rectf;
-using namespace ci::app;
 using namespace ci;
 
 // Global variable for audio purposes
 audio::VoiceRef background_music;
 audio::VoiceRef crash_sound;
 
+// Constants for this game... can be changed to make adjustments for the game
 const double kForce = 5;
 const float kBlockSize = 50.0f;
 const float kTimeStep = 1.0f / 60.0f;
 const float kWallWidth = 0.0f;
-const float kPPM = 50.0f; // Convert from pixels to meters
+const float kPPM = 50.0f; // pixels per meter (PPM)
 const char kNormalFont[] = "Impact";
 
 namespace myapp {
@@ -48,28 +48,34 @@ void MyApp::setup() {
   blocks_.init(world_, getWindowCenter().x - kBlockSize,
       getWindowCenter().y, getWindowCenter().x, getWindowCenter().y);
   CreateWalls();
+
+  // Create background image
   image = ci::gl::Texture::create(loadImage
       (loadAsset("background_shredd.jpg")));
+
+  // Initialize variables for spikes
   list_section_ = { 0, 0, 0 };
   section_width_ = (float)getWindowHeight() / (float)(list_section_.size() - 1);
+
+  // Initialize and play background music
   audio::SourceFileRef sourceFile = audio::load
       (cinder::app::loadAsset("my_app_audio.mp3"));
   background_music = cinder::audio::Voice::create(sourceFile);
   background_music->start();
 
+  // Initialize crash sound effect
   audio::SourceFileRef sourceFileCrash = audio::load
       (cinder::app::loadAsset("Crash.mp3"));
   crash_sound = cinder::audio::Voice::create(sourceFileCrash);
 }
 
 void MyApp::update() {
-  // Loop music if it stopped...
+  // Restart background music if it finished
   if (!background_music->isPlaying()) {
     background_music->start();
   }
 
-
-  // In order to actually move the objects
+  // In order to actually move the objects...
   world_->Step(kTimeStep, 8, 3);
   world_->ClearForces();
 
@@ -84,7 +90,6 @@ void MyApp::update() {
     is_start_ = false;
     score_ = (int)(getElapsedSeconds() - time_game_start_);
   }
-
 }
 
 void MyApp::draw() {
@@ -100,14 +105,13 @@ void MyApp::draw() {
     DrawBlocks();
     DrawGameScreen();
   } else if (has_collided_) {
+    // Change high_score_ if user beat the previous top score
     if (score_ > high_score_) {
       high_score_ = score_;
     }
     DrawHomeScreen();
     DrawBlocks();
   }
-
-
 }
 
 void MyApp::DrawHomeScreen() {
@@ -178,13 +182,12 @@ void MyApp::DrawHomeScreen() {
     const auto your_scores_surface = your_score.render();
     const auto your_scores_texture =
         gl::Texture::create(your_scores_surface);
-
     gl::draw(your_scores_texture, loc_your_score);
   }
 }
 
 void MyApp::DrawGameScreen() {
-  // Text box for title
+  // Text box for score
   auto box = TextBox()
       .alignment(TextBox::CENTER)
       .font(cinder::Font("Impact", 30))
@@ -204,12 +207,12 @@ void MyApp::DrawBlocks() const {
   // Get the current positioning
   b2Vec2 block_one_pos = blocks_.GetBlockOnePos();
   b2Vec2 block_two_pos = blocks_.GetBlockTwoPos();
-  gl::color(.5, 1, .5);
+  gl::color(.5, 1, .5); // Can change the colors of the blocks here
   gl::drawSolidRect(Rectf(block_one_pos.x * kPPM,
                                   block_one_pos.y * kPPM,
                                   block_one_pos.x * kPPM + kBlockSize,
                                   block_one_pos.y * kPPM + kBlockSize));
-  gl::color(1, .5, .5);
+  gl::color(1, .5, .5); // Can change the colors of the blocks here
   gl::drawSolidRect(Rectf(block_two_pos.x * kPPM,
                                   block_two_pos.y * kPPM,
                                   block_two_pos.x * kPPM + kBlockSize,
@@ -236,6 +239,8 @@ void MyApp::CreateWalls() {
   wall_body_def_two.type = b2_staticBody;
   wall_body_def_two.position.Set(getWindowWidth() / kPPM,
                                  double(getWindowHeight())/ (2*kPPM));
+
+  // Add walls to the world
   wall_two_ = world_->CreateBody(&wall_body_def_two);
   wall_two_->CreateFixture(&wall_box2, 0.0f);
 }
@@ -310,9 +315,9 @@ void MyApp::DrawLeftSpike(int current_section, int size) {
   gl::drawSolidTriangle(vec2(size,y_position_var - 50),
                         vec2(0, y_position_var - 50),
                         vec2(0, y_position_var));
-  // NOTE: GetBlock#Pos returns the top left corner of each block
-  // Notice that for left spike, area of collision is block one top left corner
-  // y_position_var is bottom of spike
+  // NOTE: GetBlock#Pos returns the top left corner of each block,
+  //       y_position_var is bottom of spike.
+  // Notice that for left spike, area of collision is block one top left corner.
   float block_one_pos_x = blocks_.GetBlockOnePos().x * kPPM; // Store pos
   float block_one_pos_y = blocks_.GetBlockOnePos().y * kPPM;
   if (IsInside(0, y_position_var,
@@ -429,7 +434,7 @@ void MyApp::TwoRight() {
 void MyApp::HandleKeyPressed() {
   float block_one_x = blocks_.GetBlockOnePos().x * kPPM;
   float block_two_x = blocks_.GetBlockTwoPos().x * kPPM;
-  // If the game is on home screen and user starts game...
+  // If the game is on home screen and user presses SPACE bar
   if (held_keys_.find(KeyEvent::KEY_SPACE) != held_keys_.end()) {
     if (has_collided_) {
       // Restart the game if user lost and presses space to play again
@@ -446,16 +451,23 @@ void MyApp::HandleKeyPressed() {
   // Handle game movements
   if (held_keys_.find(KeyEvent::KEY_LEFT) != held_keys_.end() &&
       held_keys_.find(KeyEvent::KEY_RIGHT) != held_keys_.end()) {
+    // Both left and right arrow keys held down
     OneLeft();
     TwoRight();
   } else if (held_keys_.find(KeyEvent::KEY_LEFT) != held_keys_.end()) {
+    // Left arrow key held down
     OneLeft();
     TwoLeft();
   } else if (held_keys_.find(KeyEvent::KEY_RIGHT) != held_keys_.end()) {
+    // Right arrow key held down
     OneRight();
     TwoRight();
   } else if (held_keys_.find(KeyEvent::KEY_LEFT) == held_keys_.end() &&
              held_keys_.find(KeyEvent::KEY_RIGHT) == held_keys_.end()) {
+    // No keys held down so blocks should return to middle and stop
+    // NOTE: these numbers were adjusted to prevent oscillations, so won't stop
+    //       in the exact center of the screen. Maybe change this to avoid magic
+    //       numbers?
     if (block_two_x <= 342 && block_two_x >= 318
         && block_one_x <= 242 && block_one_x >= 218) {
       blocks_.GetBlockOne()->SetLinearVelocity(b2Vec2(0, 0));

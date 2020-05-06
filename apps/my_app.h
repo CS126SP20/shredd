@@ -112,7 +112,9 @@ class MyApp : public cinder::app::App {
   void HandleKeyPressed();
 
   /**
-   * The following are the functions for applying forces on the blocks.
+   * The following are the functions for applying forces on the blocks. For
+   * example, OneLeft moves the first block to the left and TwoRight moves the
+   * second block to the right.
    */
   void OneLeft();
   void OneRight();

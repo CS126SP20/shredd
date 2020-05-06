@@ -1,6 +1,6 @@
 # Development
 
----
+
 - **4/18/20** Added Box2D
    - Still need to figure out how to use it
    - Decided not to use PretzelGui (for now) and just use Cinder's GUI
@@ -44,4 +44,4 @@
    - Changed code logic so user can play again - dont have to end program
    - Still need to figure out README.md and PROPOSAL.md
 - **5/5/20** Add PROPOSAL.md and README.md   
-- **5/6/20** Add crash audio noise
+- **5/6/20** Add crash audio noise and update README.md
