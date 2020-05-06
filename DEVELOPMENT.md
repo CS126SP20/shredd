@@ -39,8 +39,9 @@
      - [x] Detect collisions
      - [x] Draw score after game ends
      - [x] Add audio
-     - [ ] Maybe add sparks graphic for when the user loses
 - **5/4/20** Handle displaying the high score and user score once game ends
    - Made sure audio looped
    - Changed code logic so user can play again - dont have to end program
    - Still need to figure out README.md and PROPOSAL.md
+- **5/5/20** Add PROPOSAL.md and README.md   
+- **5/6/20** Add crash audio noise

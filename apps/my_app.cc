@@ -17,12 +17,14 @@ using namespace ci;
 
 // Global variable for audio purposes
 audio::VoiceRef background_music;
+audio::VoiceRef crash_sound;
 
 const double kForce = 5;
 const float kBlockSize = 50.0f;
 const float kTimeStep = 1.0f / 60.0f;
 const float kWallWidth = 0.0f;
 const float kPPM = 50.0f; // Convert from pixels to meters
+const char kNormalFont[] = "Impact";
 
 namespace myapp {
 
@@ -54,6 +56,10 @@ void MyApp::setup() {
       (cinder::app::loadAsset("my_app_audio.mp3"));
   background_music = cinder::audio::Voice::create(sourceFile);
   background_music->start();
+
+  audio::SourceFileRef sourceFileCrash = audio::load
+      (cinder::app::loadAsset("Crash.mp3"));
+  crash_sound = cinder::audio::Voice::create(sourceFileCrash);
 }
 
 void MyApp::update() {
@@ -61,6 +67,7 @@ void MyApp::update() {
   if (!background_music->isPlaying()) {
     background_music->start();
   }
+
 
   // In order to actually move the objects
   world_->Step(kTimeStep, 8, 3);
@@ -107,7 +114,7 @@ void MyApp::DrawHomeScreen() {
   // Text box for title
   auto box = TextBox()
       .alignment(TextBox::CENTER)
-      .font(cinder::Font("Impact", 80))
+      .font(cinder::Font(kNormalFont, 80))
       .size({600, 100})
       .color(Color(0, .5, .5))
       .backgroundColor(ColorA(0, 0, 0, 0))
@@ -123,7 +130,7 @@ void MyApp::DrawHomeScreen() {
   if (int(getElapsedSeconds() * 3) % 2 == 0) {
     auto instructions = TextBox()
         .alignment(TextBox::CENTER)
-        .font(cinder::Font("Impact", 30))
+        .font(cinder::Font(kNormalFont, 30))
         .size({600, 100})
         .color(Color(0, .5, .5))
         .backgroundColor(ColorA(0, 0, 0, 0))
@@ -136,13 +143,13 @@ void MyApp::DrawHomeScreen() {
     gl::draw(instructions_texture, loc_instructions);
   }
 
-  // Have to figure out elegant way to do this...
+  // Text box for high score
   if (high_score_ != 0) {
     std::stringstream high_score_text;
     high_score_text << "Best: " << high_score_;
     auto high_score = TextBox()
         .alignment(TextBox::CENTER)
-        .font(cinder::Font("Impact", 30))
+        .font(cinder::Font(kNormalFont, 30))
         .size({600, 70})
         .color(Color(0, .5, .5))
         .backgroundColor(ColorA(0, 0, 0, 0))
@@ -161,7 +168,7 @@ void MyApp::DrawHomeScreen() {
     score_text << "Score: " << score_;
     auto your_score = TextBox()
         .alignment(TextBox::CENTER)
-        .font(cinder::Font("Impact", 30))
+        .font(cinder::Font(kNormalFont, 30))
         .size({600, 70})
         .color(Color(0, .5, .5))
         .backgroundColor(ColorA(0, 0, 0, 0))
@@ -313,6 +320,7 @@ void MyApp::DrawLeftSpike(int current_section, int size) {
                    size, y_position_var - 50,
                    block_one_pos_x, block_one_pos_y)) {
     has_collided_ = true;
+    crash_sound->start();
   }
 }
 
@@ -333,6 +341,7 @@ void MyApp::DrawRightSpike(int current_section, int size) {
                getWindowWidth(), y_position_var,
                block_two_pos_x + 50, block_two_pos_y)) {
     has_collided_ = true;
+    crash_sound->start();
   }
 }
 
@@ -398,6 +407,7 @@ void MyApp::DrawCenterSpike(int current_section) {
   // Check intersection of either blocks with center spike
   if (first_half_one || first_half_two || second_half_one || second_half_two) {
     has_collided_ = true;
+    crash_sound->start();
   }
 }
 

@@ -6,7 +6,7 @@
 
 #include <catch2/catch.hpp>
 
-TEST_CASE("Test blocks init", "[blocks][init]") {
+TEST_CASE("Test blocks", "[blocks][init]") {
   // Initialize world and blocks
   b2World* world = new b2World(b2Vec2(0, 0));
   world->SetAllowSleeping(false);
